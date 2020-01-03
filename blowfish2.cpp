@@ -4,32 +4,31 @@
 #include <cstdint>
 using namespace std;
 
-extern array<array<uint32_t,256>,4>S;
+extern const array<array<uint32_t,256>,4>S;
 extern array<uint32_t,18>P;
-void init_P(vector<uint32_t>key);
-uint32_t f(uint32_t left);
-uint64_t cycle(uint64_t block);
-uint64_t blowfish(uint64_t block, bool);
+void init_P(vector<uint32_t>);
+uint32_t f(uint32_t);
+uint64_t cycle(uint64_t);
+uint64_t blowfish(uint64_t, bool);
 
 int main() {
-    uint64_t hexblock64=0x123456abcd132536ULL;
     vector<uint32_t>key={0xaabb0918,0x2736ccdd};
     init_P(key);
-    uint64_t enc=blowfish(hexblock64,1);
+    uint64_t block64=0x123456abcd132536ULL;
+    uint64_t enc=blowfish(block64,1);
     uint64_t dec=blowfish(enc,0);
-    printf("original: %lx\n",hexblock64);
+    printf("original: %lx\n",block64);
     printf("encrypted: %lx\n",enc);
     printf("decrypted: %lx\n",dec);
     return 0;
 }
 
 void init_P(vector<uint32_t>key){
-    int j=0,i=0;
+    int j=0;
     size_t ks=key.size();
     for(auto & p: P){
-        p=p^key[j];
-        j=(j+1)%ks;
-        printf("P[%2d]: 0x%x\n",i++,p);
+        p = p^key[j];
+        j = (j+1)%ks;
     }
 }
 
@@ -40,40 +39,37 @@ uint32_t f(uint32_t left){
         size_t col=(x)%256;
         a[i]=S[i][col];
     }
-    return ((((a[0]+a[1]))^a[2])+a[3]);
+    return ((a[0]+a[1])^a[2])+a[3];
 }
 
-uint64_t cycle(int time,uint64_t block){
+uint64_t cycle(size_t time, uint64_t block){
     uint32_t left, right;
-    left=block>>32;
-    right=block&0x00000000FFFFFFFF;
-    left = left^P[time];
-    uint32_t fOut=f(left);
-    right=fOut^right;
-    printf("%d:%lx\n",time,(uint64_t(right)<<32)+uint64_t(left));
-    //swap left and right
-    return (uint64_t(right)<<32)+uint64_t(left);
-}
-
-uint64_t blowfish(uint64_t hexblock, bool encrypt){
-    int last1,last2;
-    if(encrypt){
-    for(int i=0;i<16;i++){
-        hexblock=cycle(i,hexblock);
-        last1=16;last2=17;
-    }}else{
-    for(int i=17;i>1;i--){
-        hexblock=cycle(i,hexblock);
-        last1=1;last2=0;
-    }}
-    uint32_t left=hexblock>>32;
-    uint32_t right=hexblock&0x00000000FFFFFFFF;
-    left=left^P[last1];
-    right=right^P[last2];
+    left  = block>>32;
+    right = block&0x00000000FFFFFFFF;
+    left  = left^P[time];
+    right = f(left)^right;
     return (uint64_t(right)<<32)+left;
 }
 
-array<array<uint32_t,256>,4>S={{
+uint64_t blowfish(uint64_t block, bool encrypt){
+    int last1,last2;
+    if(encrypt){
+    for(size_t i=0;i<16;i++){
+        block=cycle(i,block);
+        last1=16;last2=17;
+    }}else{
+    for(size_t i=17;i>1;i--){
+        block=cycle(i,block);
+        last1=1;last2=0;
+    }}
+    uint32_t left=block>>32;
+    uint32_t right=block&0x00000000FFFFFFFF;
+    left  = left^P[last1];
+    right = right^P[last2];
+    return (uint64_t(right)<<32)+left;
+}
+
+const array<array<uint32_t,256>,4>S={{
 {
 0xd1310ba6L, 0x98dfb5acL, 0x2ffd72dbL, 0xd01adfb7L, 0xb8e1afedL, 0x6a267e96L, 0xba7c9045L, 0xf12c7f99L, 0x24a19947L, 0xb3916cf7L, 0x0801f2e2L, 0x858efc16L, 0x636920d8L, 0x71574e69L, 0xa458fea3L, 0xf4933d7eL, 0x0d95748fL, 0x728eb658L, 0x718bcd58L, 0x82154aeeL, 0x7b54a41dL, 0xc25a59b5L, 0x9c30d539L, 0x2af26013L, 0xc5d1b023L, 0x286085f0L, 0xca417918L, 0xb8db38efL, 0x8e79dcb0L, 0x603a180eL, 0x6c9e0e8bL, 0xb01e8a3eL, 0xd71577c1L, 0xbd314b27L, 0x78af2fdaL, 0x55605c60L, 0xe65525f3L, 0xaa55ab94L, 0x57489862L, 0x63e81440L, 0x55ca396aL, 0x2aab10b6L, 0xb4cc5c34L, 0x1141e8ceL, 0xa15486afL, 0x7c72e993L, 0xb3ee1411L, 0x636fbc2aL, 0x2ba9c55dL, 0x741831f6L, 0xce5c3e16L, 0x9b87931eL, 0xafd6ba33L, 0x6c24cf5cL, 0x7a325381L, 0x28958677L, 0x3b8f4898L, 0x6b4bb9afL, 0xc4bfe81bL, 0x66282193L, 0x61d809ccL, 0xfb21a991L, 0x487cac60L, 0x5dec8032L, 0xef845d5dL, 0xe98575b1L, 0xdc262302L, 0xeb651b88L, 0x23893e81L, 0xd396acc5L, 0x0f6d6ff3L, 0x83f44239L, 0x2e0b4482L, 0xa4842004L, 0x69c8f04aL, 0x9e1f9b5eL, 0x21c66842L, 0xf6e96c9aL, 0x670c9c61L, 0xabd388f0L, 0x6a51a0d2L, 0xd8542f68L, 0x960fa728L, 0xab5133a3L, 0x6eef0b6cL, 0x137a3be4L, 0xba3bf050L, 0x7efb2a98L, 0xa1f1651dL, 0x39af0176L, 0x66ca593eL, 0x82430e88L, 0x8cee8619L, 0x456f9fb4L, 0x7d84a5c3L, 0x3b8b5ebeL, 0xe06f75d8L, 0x85c12073L, 0x401a449fL, 0x56c16aa6L, 0x4ed3aa62L, 0x363f7706L, 0x1bfedf72L, 0x429b023dL, 0x37d0d724L, 0xd00a1248L, 0xdb0fead3L, 0x49f1c09bL, 0x075372c9L, 0x80991b7bL, 0x25d479d8L, 0xf6e8def7L, 0xe3fe501aL, 0xb6794c3bL, 0x976ce0bdL, 0x04c006baL, 0xc1a94fb6L, 0x409f60c4L, 0x5e5c9ec2L, 0x196a2463L, 0x68fb6fafL, 0x3e6c53b5L, 0x1339b2ebL, 0x3b52ec6fL, 0x6dfc511fL, 0x9b30952cL, 0xcc814544L, 0xaf5ebd09L, 0xbee3d004L, 0xde334afdL, 0x660f2807L, 0x192e4bb3L, 0xc0cba857L, 0x45c8740fL, 0xd20b5f39L, 0xb9d3fbdbL, 0x5579c0bdL, 0x1a60320aL, 0xd6a100c6L, 0x402c7279L, 0x679f25feL, 0xfb1fa3ccL, 0x8ea5e9f8L, 0xdb3222f8L, 0x3c7516dfL, 0xfd616b15L, 0x2f501ec8L, 0xad0552abL, 0x323db5faL, 0xfd238760L, 0x53317b48L, 0x3e00df82L, 0x9e5c57bbL, 0xca6f8ca0L, 0x1a87562eL, 0xdf1769dbL, 0xd542a8f6L, 0x287effc3L, 0xac6732c6L, 0x8c4f5573L, 0x695b27b0L, 0xbbca58c8L, 0xe1ffa35dL, 0xb8f011a0L, 0x10fa3d98L, 0xfd2183b8L, 0x4afcb56cL, 0x2dd1d35bL, 0x9a53e479L, 0xb6f84565L, 0xd28e49bcL, 0x4bfb9790L, 0xe1ddf2daL, 0xa4cb7e33L, 0x62fb1341L, 0xcee4c6e8L, 0xef20cadaL, 0x36774c01L, 0xd07e9efeL, 0x2bf11fb4L, 0x95dbda4dL, 0xae909198L, 0xeaad8e71L, 0x6b93d5a0L, 0xd08ed1d0L, 0xafc725e0L, 0x8e3c5b2fL, 0x8e7594b7L, 0x8ff6e2fbL, 0xf2122b64L, 0x8888b812L, 0x900df01cL, 0x4fad5ea0L, 0x688fc31cL, 0xd1cff191L, 0xb3a8c1adL, 0x2f2f2218L, 0xbe0e1777L, 0xea752dfeL, 0x8b021fa1L, 0xe5a0cc0fL, 0xb56f74e8L, 0x18acf3d6L, 0xce89e299L, 0xb4a84fe0L, 0xfd13e0b7L, 0x7cc43b81L, 0xd2ada8d9L, 0x165fa266L, 0x80957705L, 0x93cc7314L, 0x211a1477L, 0xe6ad2065L, 0x77b5fa86L, 0xc75442f5L, 0xfb9d35cfL, 0xebcdaf0cL, 0x7b3e89a0L, 0xd6411bd3L, 0xae1e7e49L, 0x00250e2dL, 0x2071b35eL, 0x226800bbL, 0x57b8e0afL, 0x2464369bL, 0xf009b91eL, 0x5563911dL, 0x59dfa6aaL, 0x78c14389L, 0xd95a537fL, 0x207d5ba2L, 0x02e5b9c5L, 0x83260376L, 0x6295cfa9L, 0x11c81968L, 0x4e734a41L, 0xb3472dcaL, 0x7b14a94aL, 0x1b510052L, 0x9a532915L, 0xd60f573fL, 0xbc9bc6e4L, 0x2b60a476L, 0x81e67400L, 0x08ba6fb5L, 0x571be91fL, 0xf296ec6bL, 0x2a0dd915L, 0xb6636521L, 0xe7b9f9b6L, 0xff34052eL, 0xc5855664L, 0x53b02d5dL, 0xa99f8fa1L, 0x08ba4799L, 0x6e85076aL},
 {
@@ -90,4 +86,8 @@ array<uint32_t,18>P = { 0x243f6a88L, 0x85a308d3L, 0x13198a2eL, 0x03707344L, 0xa4
 
 
 
- 
+
+
+
+
+
